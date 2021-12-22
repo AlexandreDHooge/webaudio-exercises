@@ -2,4 +2,7 @@
 node_modules
 public/.bundle*
 
+*.pdf
+cheatcodes
+*.json
 ligeti-artikulation.wav
