@@ -22,7 +22,7 @@ class DumbPriorityQueue {
   }
 
   head() {
-    this.engines.sort((a, b) => a.__time <= b.__time ? -1 : 1);
+    this.engines.sort((a, b) => a.time <= b.time ? -1 : 1);
 
     if (this.engines.length) {
       const engine = this.engines[0];
@@ -67,10 +67,34 @@ function tick() {
   setTimeout(tick, period * 1000);
 }
 
+function playMetroSound(time) {
+  const env = audioContext.createGain();
+  env.connect(audioContext.destination);
+  env.gain.setValueAtTime(0, time);
+  env.gain.linearRampToValueAtTime(1, time + 0.01);
+  env.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+  const src = audioContext.createOscillator();
+  src.frequency.value = 600;
+  src.connect(env);
+  
+  src.start(time);
+  src.stop(time + 0.05);
+}
 const metro = {
-    // <-----------------------------
-    // code
-    // ---------------------------->
+  guiElement : null,
+  period : 1,
+  advanceTime(currentTime, dt) {
+    if (!this.guiElement){
+      this.guiElement = document.querySelector('.metro');
+    };
+    if (this.guiElement) {
+      setTimeout(() => {
+        this.guiElement.active = true
+      }, dt * 1000);
+    };
+    playMetroSound(currentTime);
+    return currentTime + this.period;
+  }
 };
 
 // ## Going further
@@ -90,6 +114,12 @@ const metro = {
   tick();
   // add our metro engine to the queue
   queue.add(metro, Math.ceil(audioContext.currentTime));
+
+  //const now = audioContext.currentTime;
+  //console.log(now);
+  //for (let t=0; t<16; t++) {
+  //  playMetroSound(now + t/2);
+  //};
 
   renderGUI();
 }());

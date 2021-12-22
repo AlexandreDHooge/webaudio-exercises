@@ -19,40 +19,39 @@ const globals = {
 // [students] ----------------------------------------
 class GranularEngine {
   constructor(audioContext) {
-    // <-----------------------------
-    // code
-    // ---------------------------->
+    this.audioContext = audioContext;
+
+    this.buffer = null;
+    this.period = 0.02;
+    this.duration = 0.1;
+
+    this._position = 0;
+
+    this._output = this.audioContext.createGain();
   }
+
 
   connect(output) {
-    // <-----------------------------
-    // code
-    // ---------------------------->
+    this._output.connect(output);
   }
 
-  set buffer(value) {
-    // <-----------------------------
-    // code
-    // ---------------------------->
-  }
-
-  get buffer() {
-    // <-----------------------------
-    // code
-    // ---------------------------->
-  }
+//  set buffer(value) {
+//    this.buffer = value;
+//  }
+//
+//  get buffer() {
+//    return this.buffer;
+//  }
 
   set position(value) {
     // clamp to [0, buffer.duration - grain.duration]
-    // <-----------------------------
-    // code
-    // ---------------------------->
+    const maxPosition = this.buffer.duration - this.duration;
+    const minPosition = 0;
+    this._position = Math.max(minPosition, Math.min(maxPosition, value));
   }
 
   get position() {
-    // <-----------------------------
-    // code
-    // ---------------------------->
+    return this._position;
   }
 
   advanceTime(currentTime, audioTime, dt) {
@@ -62,14 +61,22 @@ class GranularEngine {
     // ---------------------------->
 
     // fire and forget the grain
-    // <-----------------------------
-    // code
-    // ---------------------------->
+    const env = this.audioContext.createGain();
+    env.connect(this._output);
+    env.gain.value = 0;
 
-    // triangle ramp
-    // <-----------------------------
-    // code
-    // ---------------------------->
+    const src = this.audioContext.createBufferSource();
+    src.buffer = this.buffer;
+    src.connect(env);
+
+    env.gain.setValueAtTime(0, currentTime);
+    env.gain.linearRampToValueAtTime(1, currentTime + this.duration / 2);
+    env.gain.linearRampToValueAtTime(0, currentTime + this.duration);
+
+    src.start(currentTime, this.position);
+    src.stop(currentTime + this.period);
+
+    return currentTime + this.period;
   }
 }
 
@@ -89,14 +96,15 @@ class GranularEngine {
   console.log(buffer);
 
   // create scheduler
-    // <-----------------------------
-    // code
-    // ---------------------------->
+  const getTimeFunction = () => audioContext.currentTime;
+  const scheduler = new Scheduler(getTimeFunction);
 
   // create granular engine
-    // <-----------------------------
-    // code
-    // ---------------------------->
+  const synth = new GranularEngine(audioContext);
+  synth.buffer = buffer;
+  synth.connect(audioContext.destination);
+
+  scheduler.add(synth)
 
   globals.buffer = buffer;
   globals.scheduler = scheduler;
